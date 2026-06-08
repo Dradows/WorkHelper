@@ -1,0 +1,167 @@
+.interface-comparator {
+  padding: 0;
+}
+
+.interface-comparator .input-section {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.interface-comparator .form-group {
+  margin-bottom: 16px;
+}
+
+.interface-comparator .form-group label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.interface-comparator .file-list {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #555;
+}
+
+.interface-comparator .file-list ul {
+  margin: 6px 0 0 0;
+  padding-left: 20px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.interface-comparator .file-list li {
+  line-height: 1.6;
+  word-break: break-all;
+}
+
+.interface-comparator .pair-textarea {
+  width: 100%;
+  max-width: 600px;
+  padding: 10px 12px;
+  border: 1px solid #d0d5dd;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: 'Consolas', 'Courier New', monospace;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.interface-comparator .pair-textarea:focus {
+  outline: none;
+  border-color: #4f8ef7;
+  box-shadow: 0 0 0 3px rgba(79, 142, 247, 0.1);
+}
+
+.interface-comparator .btn-primary {
+  padding: 10px 24px;
+  background: #4f8ef7;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 15px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.interface-comparator .btn-primary:hover:not(:disabled) {
+  background: #3a7be8;
+}
+
+.interface-comparator .btn-primary:disabled {
+  background: #a0c4f5;
+  cursor: not-allowed;
+}
+
+.interface-comparator .result-section {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.interface-comparator .compare-result {
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.interface-comparator .compare-result:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.interface-comparator .compare-result h3 {
+  font-size: 16px;
+  margin: 0 0 12px 0;
+  color: #333;
+}
+
+.interface-comparator .file-a {
+  color: #e63946;
+}
+
+.interface-comparator .file-b {
+  color: #457b9d;
+}
+
+.interface-comparator .error-msg {
+  color: #e63946;
+  font-weight: 500;
+}
+
+.interface-comparator .success-msg {
+  color: #2a9d8f;
+  font-weight: 500;
+}
+
+.interface-comparator .diff-summary {
+  color: #e76f51;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
+.interface-comparator .diff-table-wrapper {
+  overflow-x: auto;
+}
+
+.interface-comparator .diff-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.interface-comparator .diff-table th {
+  background: #f0f2f5;
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 600;
+  border: 1px solid #d0d5dd;
+  white-space: nowrap;
+}
+
+.interface-comparator .diff-table td {
+  padding: 6px 12px;
+  border: 1px solid #e5e7eb;
+  vertical-align: top;
+}
+
+.interface-comparator .diff-table tbody tr:nth-child(even) {
+  background: #fafbfc;
+}
+
+.interface-comparator .cell-a {
+  color: #e63946;
+  max-width: 400px;
+  word-break: break-all;
+}
+
+.interface-comparator .cell-b {
+  color: #457b9d;
+  max-width: 400px;
+  word-break: break-all;
+}

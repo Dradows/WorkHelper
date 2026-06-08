@@ -9,12 +9,13 @@ import SqlProcessor from './SqlProcessor';
 import JobCommandGenerator from './JobCommandGenerator';
 import StringReplacer from './StringReplacer';
 import DependencyGraph from './DependencyGraph';
+import InterfaceComparator from './InterfaceComparator';
 
 const TabContainer = () => {
   // 根据hash初始化tab
   const getTabFromHash = () => {
     const hash = window.location.hash.replace('#', '');
-    const validTabs = ['home', 'text', 'time', 'regex', 'replace', 'qr', 'excel', 'sqlproc', 'jobcmd', 'depgraph'];
+    const validTabs = ['home', 'text', 'time', 'regex', 'replace', 'qr', 'excel', 'sqlproc', 'jobcmd', 'depgraph', 'apicmp'];
     return validTabs.includes(hash) ? hash : 'home';
   };
   const [activeTab, setActiveTab] = useState(getTabFromHash());
@@ -98,6 +99,12 @@ const TabContainer = () => {
         >
           依赖查询
         </button>
+        <button
+          className={`tab-button ${activeTab === 'apicmp' ? 'active' : ''}`}
+          onClick={() => handleTabChange('apicmp')}
+        >
+          接口比对
+        </button>
       </div>
 
       <div className="tab-content">
@@ -111,6 +118,7 @@ const TabContainer = () => {
         {activeTab === 'sqlproc' && <SqlProcessor />}
         {activeTab === 'jobcmd' && <JobCommandGenerator />}
         {activeTab === 'depgraph' && <DependencyGraph />}
+        {activeTab === 'apicmp' && <InterfaceComparator />}
       </div>
     </div>
   )
