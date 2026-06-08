@@ -1,6 +1,5 @@
 import React from 'react'
 import TabContainer from './components/TabContainer'
-import './App.css'
 
 function App() {
   return (

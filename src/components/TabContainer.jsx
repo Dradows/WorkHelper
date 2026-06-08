@@ -4,15 +4,17 @@ import QRCodeGenerator from './QRCodeGenerator';
 import TextFormatter from './TextFormatter';
 import TimeExtractor from './TimeExtractor';
 import RegexTester from './RegexTester';
-import './TabContainer.css';
 import ExcelImporter from './ExcelImporter';
 import SqlProcessor from './SqlProcessor';
+import JobCommandGenerator from './JobCommandGenerator';
+import StringReplacer from './StringReplacer';
+import DependencyGraph from './DependencyGraph';
 
 const TabContainer = () => {
   // 根据hash初始化tab
   const getTabFromHash = () => {
     const hash = window.location.hash.replace('#', '');
-    const validTabs = ['home', 'text', 'time', 'regex', 'qr', 'excel', 'sqlproc'];
+    const validTabs = ['home', 'text', 'time', 'regex', 'replace', 'qr', 'excel', 'sqlproc', 'jobcmd', 'depgraph'];
     return validTabs.includes(hash) ? hash : 'home';
   };
   const [activeTab, setActiveTab] = useState(getTabFromHash());
@@ -40,50 +42,61 @@ const TabContainer = () => {
           className={`tab-button ${activeTab === 'home' ? 'active' : ''}`}
           onClick={() => handleTabChange('home')}
         >
-          <span className="tab-icon">🏠</span>
           首页
         </button>
         <button
           className={`tab-button ${activeTab === 'text' ? 'active' : ''}`}
           onClick={() => handleTabChange('text')}
         >
-          <span className="tab-icon">📝</span>
-          文本格式化器
+          文本格式
         </button>
         <button
           className={`tab-button ${activeTab === 'time' ? 'active' : ''}`}
           onClick={() => handleTabChange('time')}
         >
-          <span className="tab-icon">⏰</span>
-          时间提取器
+          时间提取
         </button>
         <button
           className={`tab-button ${activeTab === 'regex' ? 'active' : ''}`}
           onClick={() => handleTabChange('regex')}
         >
-          <span className="tab-icon">🔍</span>
-          正则测试器
+          正则测试
+        </button>
+        <button
+          className={`tab-button ${activeTab === 'replace' ? 'active' : ''}`}
+          onClick={() => handleTabChange('replace')}
+        >
+          字符串替换
         </button>
         <button
           className={`tab-button ${activeTab === 'qr' ? 'active' : ''}`}
           onClick={() => handleTabChange('qr')}
         >
-          <span className="tab-icon">📱</span>
-          二维码生成器
+          二维码
         </button>
         <button
           className={`tab-button ${activeTab === 'excel' ? 'active' : ''}`}
           onClick={() => handleTabChange('excel')}
         >
-          <span className="tab-icon">📥</span>
-          导入 Excel 并生成 SQL
+          SQL 初始化
         </button>
         <button
           className={`tab-button ${activeTab === 'sqlproc' ? 'active' : ''}`}
           onClick={() => handleTabChange('sqlproc')}
         >
-          <span className="tab-icon">🛠️</span>
-          PTEMP 转化
+          PTEMP
+        </button>
+        <button
+          className={`tab-button ${activeTab === 'jobcmd' ? 'active' : ''}`}
+          onClick={() => handleTabChange('jobcmd')}
+        >
+          作业命令
+        </button>
+        <button
+          className={`tab-button ${activeTab === 'depgraph' ? 'active' : ''}`}
+          onClick={() => handleTabChange('depgraph')}
+        >
+          依赖查询
         </button>
       </div>
 
@@ -92,9 +105,12 @@ const TabContainer = () => {
         {activeTab === 'text' && <TextFormatter />}
         {activeTab === 'time' && <TimeExtractor />}
         {activeTab === 'regex' && <RegexTester />}
+        {activeTab === 'replace' && <StringReplacer />}
         {activeTab === 'qr' && <QRCodeGenerator />}
         {activeTab === 'excel' && <ExcelImporter />}
         {activeTab === 'sqlproc' && <SqlProcessor />}
+        {activeTab === 'jobcmd' && <JobCommandGenerator />}
+        {activeTab === 'depgraph' && <DependencyGraph />}
       </div>
     </div>
   )

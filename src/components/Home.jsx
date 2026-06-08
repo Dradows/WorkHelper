@@ -1,5 +1,4 @@
 import React from 'react';
-import './Home.css';
 
 const tabFeatures = [
   {
@@ -21,6 +20,12 @@ const tabFeatures = [
     tab: 'regex',
   },
   {
+    name: '字符串替换',
+    icon: '↔',
+    description: '输入文本或多个文件，按多条映射规则批量替换字符串。',
+    tab: 'replace',
+  },
+  {
     name: '二维码生成器',
     icon: '📱',
     description: '快速生成二维码，可用于会议号扫码。',
@@ -38,11 +43,22 @@ const tabFeatures = [
     description: '导入 SQL 文件并根据规则分类、替换和输出处理后的 SQL。',
     tab: 'sqlproc',
   },
+  {
+    name: '作业命令生成器',
+    icon: 'CMD',
+    description: '按日期、作业名和勾选类型生成批处理命令。',
+    tab: 'jobcmd',
+  },
+  {
+    name: '依赖查询',
+    icon: 'DAG',
+    description: '根据作业依赖数据生成有向无环图，支持大图逐层展开。',
+    tab: 'depgraph',
+  },
 ];
 
 const Home = ({ setActiveTab }) => (
   <div className="home-container">
-    <h1>WorkHelper 首页</h1>
     <p>欢迎使用 WorkHelper 工具箱！以下是各标签页的功能简介：</p>
     <ul className="feature-list">
       {tabFeatures.map((tab) => (

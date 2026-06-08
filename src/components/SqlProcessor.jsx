@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import JSZip from 'jszip'
-import './SqlProcessor.css'
 
 
 const SqlProcessor = () => {
@@ -300,7 +299,6 @@ const SqlProcessor = () => {
 
   return (
     <div className="container sql-processor">
-      <h1>SQL 处理器（PTEMP 转换）</h1>
       <div className="input-section">
         <label>选择要处理的 SQL 文件（可多选）：</label>
         <input type="file" accept=".sql" multiple onChange={handleFile} />

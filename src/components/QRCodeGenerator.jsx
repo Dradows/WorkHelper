@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { generateQRCode } from '../utils/qrCodeUtils'
-import './QRCodeGenerator.css'
 
 const QRCodeGenerator = () => {
   const [inputText, setInputText] = useState('')
@@ -81,8 +80,6 @@ const QRCodeGenerator = () => {
 
   return (
     <div className="container">
-      <h1>实时二维码生成器</h1>
-      
       <div className="input-section">
         <label htmlFor="text-input">输入文本或链接：</label>
         <textarea

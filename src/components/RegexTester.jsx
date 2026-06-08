@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import './RegexTester.css'
+
+const sampleRegexPattern = '\\b\\d{2}:\\d{2}:\\d{2}\\b'
+const sampleTestString = 'JOB_A finished at 06:01:00\nJOB_B finished at 05:00:00'
 
 const RegexTester = () => {
   const [regexPattern, setRegexPattern] = useState('')
@@ -136,10 +138,14 @@ const RegexTester = () => {
     }
   }
 
+  const handleUseSample = () => {
+    setRegexPattern(sampleRegexPattern)
+    setTestString(sampleTestString)
+    setFlags('g')
+  }
+
   return (
     <div className="regex-tester">
-      <h2>正则表达式测试器</h2>
-      
       <div className="input-section">
         <div className="regex-input-group">
           <label htmlFor="regex-pattern">正则表达式：</label>
@@ -185,6 +191,13 @@ const RegexTester = () => {
             disabled={!regexPattern.trim() && !testString.trim()}
           >
             清空输入
+          </button>
+          <button
+            className="process-btn"
+            type="button"
+            onClick={handleUseSample}
+          >
+            示例
           </button>
         </div>
       </div>

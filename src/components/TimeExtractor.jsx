@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import './TimeExtractor.css'
+
+const sampleText = 'plan 1.5\u5c0f\u65f6, dev 2\u5c0f\u65f6, review 0.5\u5c0f\u65f6'
 
 const TimeExtractor = () => {
   const [inputText, setInputText] = useState('')
@@ -96,6 +97,10 @@ const TimeExtractor = () => {
     setTotalHours(0)
   }
 
+  const handleUseSample = () => {
+    setInputText(sampleText)
+  }
+
   // 格式化小时数显示
   const formatHours = (hours) => {
     if (Number.isInteger(hours)) {
@@ -107,8 +112,6 @@ const TimeExtractor = () => {
 
   return (
     <div className="time-extractor">
-      <h2>时间提取计算器</h2>
-      
       <div className="input-section">
         <label htmlFor="text-input">输入包含时间的文本：</label>
         <textarea
@@ -125,6 +128,13 @@ const TimeExtractor = () => {
             disabled={!inputText.trim()}
           >
             清空输入
+          </button>
+          <button
+            className="process-btn"
+            type="button"
+            onClick={handleUseSample}
+          >
+            示例
           </button>
         </div>
       </div>

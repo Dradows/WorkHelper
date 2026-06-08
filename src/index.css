@@ -1,3 +1,17 @@
+@import './App.css';
+@import './common.css';
+@import './components/TabContainer.css';
+@import './components/Home.css';
+@import './components/TextFormatter.css';
+@import './components/TimeExtractor.css';
+@import './components/RegexTester.css';
+@import './components/StringReplacer.css';
+@import './components/QRCodeGenerator.css';
+@import './components/ExcelImporter.css';
+@import './components/SqlProcessor.css';
+@import './components/JobCommandGenerator.css';
+@import './components/DependencyGraph.css';
+
 * {
   margin: 0;
   padding: 0;

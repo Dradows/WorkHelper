@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import './ExcelImporter.css'
 import * as XLSX from 'xlsx'
 import JSZip from 'jszip'
 // templates no longer used for DDL generation; DDLs will be built from Excel content
@@ -197,8 +196,6 @@ const ExcelImporter = () => {
 
   return (
     <div className="container">
-      <h1>DDL生成</h1>
-
       <div className="input-section">
         <label>Excel 文件（第一张表）</label>
         <input type="file" accept=".xls,.xlsx" onChange={handleFile} />

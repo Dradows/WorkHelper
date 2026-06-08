@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import './TextFormatter.css'
+
+const sampleText = 'ACCOUNT_ID\nCUSTOMER_NO\nORDER_DATE'
 
 const TextFormatter = () => {
   const [inputText, setInputText] = useState('')
@@ -70,10 +71,13 @@ const TextFormatter = () => {
     setFormattedText('')
   }
 
+  const handleUseSample = () => {
+    setInputText(sampleText)
+    setSurround("'")
+  }
+
   return (
     <div className="text-formatter">
-      <h2>文本格式化工具</h2>
-      
       <div className="input-section">
         <label htmlFor="text-input">输入文本（支持换行、空格、逗号等分隔符）：</label>
         <textarea
@@ -100,6 +104,13 @@ const TextFormatter = () => {
             disabled={!inputText.trim()}
           >
             清空输入
+          </button>
+          <button
+            className="process-btn"
+            type="button"
+            onClick={handleUseSample}
+          >
+            示例
           </button>
         </div>
       </div>
