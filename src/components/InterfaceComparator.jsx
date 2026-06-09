@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import * as XLSX from 'xlsx'
 import './InterfaceComparator.css'
 
@@ -25,6 +25,73 @@ const InterfaceComparator = () => {
     matches.sort((a, b) => a.name.length - b.name.length)
     return matches[0]
   }
+
+  // Levenshtein distance between two strings
+  const levenshteinDistance = (a, b) => {
+    const lenA = a.length
+    const lenB = b.length
+    const dp = Array.from({ length: lenA + 1 }, () => Array(lenB + 1).fill(0))
+    for (let i = 0; i <= lenA; i++) dp[i][0] = i
+    for (let j = 0; j <= lenB; j++) dp[0][j] = j
+    for (let i = 1; i <= lenA; i++) {
+      for (let j = 1; j <= lenB; j++) {
+        dp[i][j] = a[i - 1] === b[j - 1]
+          ? dp[i - 1][j - 1]
+          : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1])
+      }
+    }
+    return dp[lenA][lenB]
+  }
+
+  // Get filename without extension for comparison
+  const getNameCore = (name) => {
+    const lastDot = name.lastIndexOf('.')
+    return lastDot > 0 ? name.substring(0, lastDot) : name
+  }
+
+  // Similarity score between two filenames (0-1, higher = more similar)
+  const fileNameSimilarity = (fileA, fileB) => {
+    const a = getNameCore(fileA.name).toLowerCase()
+    const b = getNameCore(fileB.name).toLowerCase()
+    const dist = levenshteinDistance(a, b)
+    const maxLen = Math.max(a.length, b.length)
+    if (maxLen === 0) return 1
+    return 1 - dist / maxLen
+  }
+
+  // Greedy matching: pair files by highest similarity
+  const autoMatchFiles = (fileList) => {
+    const n = fileList.length
+    // Build all pairwise similarities
+    const candidates = []
+    for (let i = 0; i < n; i++) {
+      for (let j = i + 1; j < n; j++) {
+        candidates.push({
+          i, j,
+          score: fileNameSimilarity(fileList[i], fileList[j])
+        })
+      }
+    }
+    // Sort by similarity descending
+    candidates.sort((a, b) => b.score - a.score)
+
+    const used = new Set()
+    const pairs = []
+    for (const { i, j } of candidates) {
+      if (!used.has(i) && !used.has(j)) {
+        used.add(i)
+        used.add(j)
+        pairs.push({ left: fileList[i], right: fileList[j] })
+      }
+    }
+    return pairs
+  }
+
+  // Auto-matched pairs computed from files (memoized)
+  const autoPairs = useMemo(() => {
+    if (files.length <= 2) return []
+    return autoMatchFiles(files)
+  }, [files])
 
   // Read a sheet from an Excel file, return rows (array of arrays)
   const readSheet = async (file) => {
@@ -91,31 +158,36 @@ const InterfaceComparator = () => {
         // Parse pair text: each line = two file prefixes
         const lines = pairText.split(/\r?\n/).filter(l => l.trim())
         if (lines.length === 0) {
-          alert('文件超过2个时，请填写比对配对的文本框')
-          setLoading(false)
-          return
-        }
-
-        for (let i = 0; i < lines.length; i++) {
-          const parts = lines[i].split(/\s+/).filter(p => p.trim())
-          if (parts.length < 2) {
-            alert(`第 ${i + 1} 行格式不正确，需要两个文件名/前缀，用空格分隔`)
+          // Auto-match by filename similarity
+          const matched = autoMatchFiles(files)
+          if (matched.length === 0) {
+            alert('无法自动匹配文件，请手动填写比对配对')
             setLoading(false)
             return
           }
-          const leftFile = findFileByPrefix(parts[0], files)
-          const rightFile = findFileByPrefix(parts[1], files)
-          if (!leftFile) {
-            alert(`第 ${i + 1} 行: 找不到匹配 "${parts[0]}" 的文件`)
-            setLoading(false)
-            return
+          pairs.push(...matched)
+        } else {
+          for (let i = 0; i < lines.length; i++) {
+            const parts = lines[i].split(/\s+/).filter(p => p.trim())
+            if (parts.length < 2) {
+              alert(`第 ${i + 1} 行格式不正确，需要两个文件名/前缀，用空格分隔`)
+              setLoading(false)
+              return
+            }
+            const leftFile = findFileByPrefix(parts[0], files)
+            const rightFile = findFileByPrefix(parts[1], files)
+            if (!leftFile) {
+              alert(`第 ${i + 1} 行: 找不到匹配 "${parts[0]}" 的文件`)
+              setLoading(false)
+              return
+            }
+            if (!rightFile) {
+              alert(`第 ${i + 1} 行: 找不到匹配 "${parts[1]}" 的文件`)
+              setLoading(false)
+              return
+            }
+            pairs.push({ left: leftFile, right: rightFile })
           }
-          if (!rightFile) {
-            alert(`第 ${i + 1} 行: 找不到匹配 "${parts[1]}" 的文件`)
-            setLoading(false)
-            return
-          }
-          pairs.push({ left: leftFile, right: rightFile })
         }
       } else {
         alert('请至少上传2个文件')
@@ -192,10 +264,24 @@ const InterfaceComparator = () => {
             <textarea
               className="pair-textarea"
               rows={6}
-              placeholder={"例如:\n文件A 文件B\n前缀C 前缀D"}
+              placeholder={"留空则按文件名相似度自动匹配\n\n手动指定示例:\n文件A 文件B\n前缀C 前缀D"}
               value={pairText}
               onChange={(e) => setPairText(e.target.value)}
             />
+            {!pairText.trim() && autoPairs.length > 0 && (
+              <div className="auto-pair-preview">
+                <p>📌 将按文件名相似度自动匹配以下 {autoPairs.length} 对：</p>
+                <ul>
+                  {autoPairs.map((p, i) => (
+                    <li key={i}>
+                      <span className="file-a">{p.left.name}</span>
+                      {' ↔ '}
+                      <span className="file-b">{p.right.name}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         )}
 
