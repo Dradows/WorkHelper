@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 
-const sampleInput = `JOB_A JOB_B 06:00:00 12
+const sampleInput = `ROOT JOB_A 06:30:00 60
+JOB_A JOB_B 06:00:00 12
 JOB_A JOB_C 06:01:00 18
 JOB_B JOB_D 05:00:00 31`
 
@@ -320,6 +321,7 @@ const DependencyGraph = () => {
   const [expandedNodes, setExpandedNodes] = useState(new Set())
   const [isDraggingCanvas, setIsDraggingCanvas] = useState(false)
   const [hoveredNodeId, setHoveredNodeId] = useState('')
+  const [showOnlyCriticalPath, setShowOnlyCriticalPath] = useState(false)
 
   const parsed = useMemo(() => parseRows(input), [input])
   const graph = useMemo(() => buildGraph(parsed.rows), [parsed.rows])
@@ -335,6 +337,30 @@ const DependencyGraph = () => {
     [graph, hoveredNodeId, visibleNodes]
   )
   const visibleEdges = graph.edges.filter((edge) => visibleNodes.has(edge.from) && visibleNodes.has(edge.to))
+
+  const displayNodes = useMemo(() => {
+    if (!showOnlyCriticalPath || criticalPath.highlightedNodes.size === 0) return visibleNodes
+
+    const filtered = new Set()
+    criticalPath.highlightedNodes.forEach((id) => {
+      if (visibleNodes.has(id)) filtered.add(id)
+    })
+    // 保留那些有标黄子节点的根节点
+    graph.roots.forEach((rootId) => {
+      if (!visibleNodes.has(rootId)) return
+      const children = graph.dependencyMap.get(rootId) || new Set()
+      const hasHighlightedChild = Array.from(children).some((childId) =>
+        criticalPath.highlightedNodes.has(childId)
+      )
+      if (hasHighlightedChild) filtered.add(rootId)
+    })
+    return filtered
+  }, [showOnlyCriticalPath, visibleNodes, criticalPath.highlightedNodes, graph])
+
+  const displayEdges = showOnlyCriticalPath && criticalPath.highlightedEdges.size > 0
+    ? visibleEdges.filter((edge) => criticalPath.highlightedEdges.has(getEdgeKey(edge.from, edge.to)))
+    : visibleEdges
+
   const isLargeGraph = graph.nodes.size > 30
 
   const handleInputChange = (value) => {
@@ -432,7 +458,17 @@ const DependencyGraph = () => {
       <div className="dependency-output-section">
         <div className="dependency-summary">
           <h3>依赖图</h3>
-          <span>{graph.nodes.size} 个节点 / {graph.edges.length} 条依赖</span>
+          <div className="dependency-summary-right">
+            <label className="dependency-critical-toggle">
+              <input
+                type="checkbox"
+                checked={showOnlyCriticalPath}
+                onChange={(e) => setShowOnlyCriticalPath(e.target.checked)}
+              />
+              <span>仅显示关键路径</span>
+            </label>
+            <span>{graph.nodes.size} 个节点 / {graph.edges.length} 条依赖</span>
+          </div>
         </div>
 
         {parsed.errors.length > 0 && (
@@ -473,7 +509,7 @@ const DependencyGraph = () => {
                   </marker>
                 </defs>
 
-                {visibleEdges.map((edge) => {
+                {displayEdges.map((edge) => {
                   const from = layout.positions.get(edge.from)
                   const to = layout.positions.get(edge.to)
                   if (!from || !to) return null
@@ -498,11 +534,11 @@ const DependencyGraph = () => {
                   )
                 })}
 
-                {Array.from(visibleNodes).map((id) => {
+                {Array.from(displayNodes).map((id) => {
                   const node = graph.nodes.get(id)
                   const position = layout.positions.get(id)
                   const dependencies = Array.from(graph.dependencyMap.get(id) || [])
-                  const hiddenCount = dependencies.filter((dependency) => !visibleNodes.has(dependency)).length
+                  const hiddenCount = showOnlyCriticalPath ? 0 : dependencies.filter((dependency) => !visibleNodes.has(dependency)).length
                   const isHighlighted = criticalPath.highlightedNodes.has(id)
                   const isDownstream = downstreamNodes.has(id)
                   if (!node || !position) return null

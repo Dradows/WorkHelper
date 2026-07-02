@@ -25,16 +25,18 @@ const ExcelImporter = () => {
       const json = XLSX.utils.sheet_to_json(worksheet, { defval: '' })
       const names = workbook.SheetNames || []
       // build sheetInfos by reading specific cells per sheet:
-      // B1 = table name, B3 = schema, B4 = table comment. Fields start from row 7 (index 6):
-      // B = field name, C = field type, D = field comment. Continue until first empty B cell.
+      // B1 = table name, B2 = platform, B3 = schema, B4 = table comment, B5 = remark.
+      // Fields start from row 6 (index 5): B = field name, C = field type, D = field description.
       const infos = names.map((s) => {
         const w = workbook.Sheets[s]
         const rows = XLSX.utils.sheet_to_json(w, { header: 1, defval: '' })
         const firstRow = rows[0] || []
         const tableRaw = firstRow[1]
         const tableName = tableRaw ? String(tableRaw).trim().replace(/[^A-Za-z0-9_]/g, '_') : null
-        const b3 = (rows[2] && rows[2][1]) ? String(rows[2][1]).trim() : '' // B3 schema
-        const b4 = (rows[3] && rows[3][1]) ? String(rows[3][1]).trim() : '' // B4 table comment
+        const platform = (rows[1] && rows[1][1]) ? String(rows[1][1]).trim() : '' // B2
+        const schema = (rows[2] && rows[2][1]) ? String(rows[2][1]).trim() : '' // B3
+        const tableComment = (rows[3] && rows[3][1]) ? String(rows[3][1]).trim() : '' // B4
+        const remark = (rows[4] && rows[4][1]) ? String(rows[4][1]).trim() : '' // B5
         const columns = []
         for (let i = 6; i < rows.length; i++) {
           const r = rows[i]
@@ -45,7 +47,7 @@ const ExcelImporter = () => {
           const fcomment = r[3] ? String(r[3]).trim() : ''
           columns.push({ name: fname, type: ftype, comment: fcomment })
         }
-        return { sheet: s, tableName, schema: b3, tableComment: b4, columns }
+        return { sheet: s, tableName, platform, schema, tableComment, remark, columns }
       })
       setSheetInfos(infos)
       setMessages(prev => [...prev, `解析到 ${json.length} 行（不含表头），共 ${infos.length} 个 sheet`])
@@ -127,11 +129,17 @@ const ExcelImporter = () => {
     const schema = rawSchema ? String(rawSchema).toLowerCase().replace(/[^a-z0-9_]/g, '_') : 'chn_rskdata'
     const createBlock = buildDDLForTable('', schema, table, info.columns)
 
-    // comments
-    let comments = `COMMENT ON TABLE ${schema}.${table} IS '${chineseName}';\n`
+    // Align the IS keyword: compute max prefix length, then pad with a small gap
+    const tablePrefix = `COMMENT ON TABLE  ${schema}.${table}`
+    const colPrefixes = info.columns.map((c) => `COMMENT ON COLUMN ${schema}.${table}.${c.name}`)
+    const allPrefixes = [tablePrefix, ...colPrefixes]
+    const maxLen = Math.max(...allPrefixes.map((p) => p.length))
+    const padIs = (prefix) => prefix.padEnd(maxLen + 2, ' ')
+    let comments = `${padIs(tablePrefix)} IS '${chineseName}';\n`
     info.columns.forEach((c) => {
       const colComment = c.comment || ''
-      comments += `COMMENT ON COLUMN ${schema}.${table}.${c.name} IS '${colComment}';\n`
+      const colPrefix = `COMMENT ON COLUMN ${schema}.${table}.${c.name}`
+      comments += `${padIs(colPrefix)} IS '${colComment}';\n`
     })
 
     // For ddl.sql we DO NOT include a DROP TABLE. The init.sql will add the DROP for the _dt table later.
@@ -151,6 +159,68 @@ const ExcelImporter = () => {
     a.remove()
     URL.revokeObjectURL(url)
   }
+
+  const makeSheet = (tableName, platform, schema, tableComment, remark, fields) => {
+      // Build rows matching test.xlsx format (no empty rows).
+      // Row 0: A1="表名", B1=table name
+      // Row 1: A2="平台", B2=platform
+      // Row 2: A3="表空间", B3=schema
+      // Row 3: A4="表描述", B4=table comment
+      // Row 4: A5="备注", B5=remark
+      // Row 5: A6="序号", B6="字段名", C6="字段类型", D6="字段描述"
+      // Row 6+: fields
+      const rows = []
+      rows.push(['表名', tableName || ''])                                         // row 0
+      rows.push(['平台', platform || ''])                                          // row 1
+      rows.push(['表空间', schema || ''])                                          // row 2
+      rows.push(['表描述', tableComment || ''])                                    // row 3
+      rows.push(['备注', remark || ''])                                            // row 4
+      rows.push(['序号', '字段名', '字段类型', '字段描述'])                           // row 5
+      if (fields && fields.length > 0) {
+        fields.forEach((f, i) => {
+          rows.push([i + 1, f.name || '', f.type || '', f.comment || ''])
+        })
+      }
+      return XLSX.utils.aoa_to_sheet(rows)
+    }
+
+    const handleDownloadTemplate = () => {
+      // Empty template: only structure, no sample data
+      const wb = XLSX.utils.book_new()
+      const ws = makeSheet('', '', '', '', '', [])
+      XLSX.utils.book_append_sheet(wb, ws, 'Sheet1')
+      XLSX.writeFile(wb, 'template.xlsx')
+      setMessages(prev => [...prev, '已下载空模板文件 template.xlsx。'])
+    }
+
+    const handleDownloadExample = () => {
+      // Filled example: 2 sheets with sample data, matching test.xlsx
+      const wb = XLSX.utils.book_new()
+
+      const fields1 = [
+        { name: 'id', type: 'INTEGER', comment: '主键ID' },
+        { name: 'corp_name', type: 'VARCHAR(300)', comment: '企业名称' },
+        { name: 'risk_score', type: 'DECIMAL(21,2)', comment: '风险评分' },
+        { name: 'risk_level', type: 'VARCHAR(50)', comment: '风险等级' },
+        { name: 'create_time', type: 'TIMESTAMP(0) WITHOUT TIME ZONE', comment: '创建时间' },
+        { name: 'update_time', type: 'TIMESTAMP(0) WITHOUT TIME ZONE', comment: '更新时间' },
+      ]
+      const fields2 = [
+        { name: 'id', type: 'INTEGER', comment: '主键ID' },
+        { name: 'detail_type', type: 'VARCHAR(100)', comment: '明细类型' },
+        { name: 'detail_amount', type: 'DECIMAL(21,2)', comment: '明细金额' },
+        { name: 'detail_desc', type: 'VARCHAR(500)', comment: '明细描述' },
+      ]
+
+      const ws1 = makeSheet('risk_corp_test', 'RSK', 'chn_rskdata', '风险企业测试表', '', fields1)
+      const ws2 = makeSheet('risk_corp_detail', 'RSK', 'chn_rskdata', '风险企业明细表', '', fields2)
+
+      XLSX.utils.book_append_sheet(wb, ws1, 'risk_corp_test')
+      XLSX.utils.book_append_sheet(wb, ws2, 'risk_corp_detail')
+
+      XLSX.writeFile(wb, 'test.xlsx')
+      setMessages(prev => [...prev, '已下载示例文件 test.xlsx，包含 2 个 sheet。'])
+    }
 
   const handleGenerate = () => {
     if (!name || !createDate || !orderNo) {
@@ -179,9 +249,11 @@ const ExcelImporter = () => {
         })
       }
 
+    // Sanitize filename parts: remove only characters invalid for Windows filenames (preserve CJK etc.)
+    const sanitize = (s) => String(s).trim().replace(/[\\/:*?"<>|]/g, '_')
     const zipFileName = (() => {
-      const on = orderNo ? String(orderNo).trim().replace(/[^a-zA-Z0-9_-]/g, '_') : 'no_order'
-      const nm = name ? String(name).trim().replace(/[^a-zA-Z0-9_-]/g, '_') : 'no_name'
+      const on = orderNo ? sanitize(orderNo) : 'no_order'
+      const nm = name ? sanitize(name) : 'no_name'
       const d = createDate ? formatDateForHeader(createDate) : formatDateForHeader(new Date().toISOString())
       return `${on}_${nm}_${d}.zip`
     })()
@@ -217,9 +289,12 @@ const ExcelImporter = () => {
         <input value={orderNo} onChange={e => setOrderNo(e.target.value)} placeholder="请输入单号" />
       </div>
 
-      <div className="qr-controls">
-        <button className="download-btn" onClick={handleGenerate}>生成并下载 SQL 文件</button>
-        <div style={{ minWidth: 12 }} />
+      <div className="actions-bar">
+        <div className="actions-bar-btns">
+          <button className="download-btn" onClick={handleGenerate}>生成并下载 SQL 文件</button>
+          <button className="download-btn" onClick={handleDownloadTemplate}>下载模板</button>
+          <button className="download-btn" onClick={handleDownloadExample}>下载示例</button>
+        </div>
         <div className="msg-list">
           {messages.map((m, i) => (
             <div key={i} className="msg">{m}</div>
@@ -230,7 +305,7 @@ const ExcelImporter = () => {
       <div className="notes" style={{ padding: '20px' }}>
         <p>说明：</p>
         <ul>
-          <li>基于 Excel 中每个 sheet 的定义（B1 表名，B3 schema，B4 表注释，B7 起为字段：B=字段名 C=字段类型 D=字段注释）生成 DDL 与 INIT 文件。</li>
+          <li>基于 Excel 中每个 sheet 的定义（B1 表名，B2 平台，B3 表空间，B4 表描述，B5 备注，B6 起为字段：B=字段名 C=字段类型 D=字段描述）生成 DDL 与 INIT 文件。</li>
         </ul>
       </div>
     </div>

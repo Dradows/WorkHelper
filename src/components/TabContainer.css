@@ -1,116 +1,205 @@
 .tab-container {
-  width: 100%;
-  max-width: 980px;
-  margin: 0 auto;
-  border-radius: 20px;
-  overflow: hidden;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-  background: white;
-}
-
-.tab-header {
   display: flex;
-  flex-wrap: nowrap;
-  background: white;
+  width: 100%;
+  height: 100vh;
+  max-width: 100%;
+  margin: 0;
   border-radius: 0;
-  overflow-x: auto;
-  overflow-y: hidden;
-  margin-bottom: 0;
+  overflow: hidden;
+  box-shadow: none;
+  background: #f5f6fa;
+}
+
+/* ===== 侧栏 ===== */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  width: 220px;
+  min-width: 220px;
+  background: linear-gradient(180deg, #1a1d2e 0%, #252840 100%);
+  color: #c5c9d6;
+  transition: width 0.3s ease, min-width 0.3s ease;
+  overflow: hidden;
+  z-index: 100;
+}
+
+.sidebar.collapsed {
+  width: 60px;
+  min-width: 60px;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  min-height: 64px;
+}
+
+.sidebar-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.sidebar-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
   border: none;
-  border-bottom: 1px solid #e9ecef;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #a0a5b8;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.sidebar-toggle:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.sidebar-toggle svg {
+  width: 18px;
+  height: 18px;
+}
+
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 12px 8px;
   scrollbar-width: thin;
-  scrollbar-color: #c5cbd3 #f8f9fa;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
 }
 
-.tab-header::-webkit-scrollbar {
-  height: 8px;
+.sidebar-nav::-webkit-scrollbar {
+  width: 4px;
 }
 
-.tab-header::-webkit-scrollbar-track {
-  background: #f8f9fa;
+.sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-.tab-header::-webkit-scrollbar-thumb {
-  background: #c5cbd3;
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 999px;
 }
 
-.tab-button {
-  flex: 0 0 auto;
-  min-width: max-content;
-  background: #f8f9fa;
-  border: none;
-  padding: 12px 18px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #666;
-  cursor: pointer;
-  transition: all 0.3s ease;
+.sidebar-item {
   display: flex;
-  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 11px 12px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: #a0a5b8;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  margin-bottom: 2px;
+  text-align: left;
+}
+
+.sidebar-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #e0e3eb;
+}
+
+.sidebar-item.active {
+  background: rgba(102, 126, 234, 0.2);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: inset 3px 0 0 #667eea;
+}
+
+.sidebar-icon {
+  display: flex;
   align-items: center;
   justify-content: center;
-  border-bottom: 3px solid transparent;
-  min-height: 48px;
-  position: relative;
-  white-space: nowrap;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
 }
 
-.tab-button:hover {
-  background: #e9ecef;
-  color: #333;
-  transform: translateY(-2px);
+.sidebar-icon svg {
+  width: 18px;
+  height: 18px;
 }
 
-.tab-button.active {
-  background: white;
-  color: #333;
-  border-bottom-color: #667eea;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
-}
-
-.tab-button:not(:last-child)::after {
-  content: '';
-  position: absolute;
-  right: 0;
-  top: 24%;
-  height: 52%;
-  width: 1px;
-  background: #e9ecef;
-}
-
-.tab-content {
-  border-radius: 0;
+.sidebar-label {
   overflow: hidden;
-  border: none;
-  border-top: none;
-  background: white;
+  text-overflow: ellipsis;
 }
 
-/* 响应式设计 */
-@media (max-width: 600px) {
-  .tab-container {
-    margin: 10px;
-    border-radius: 15px;
+/* ===== 主内容区 ===== */
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 24px;
+  background: #f5f6fa;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+/* ===== 响应式设计 ===== */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 220px;
+    min-width: 220px;
+    transform: translateX(0);
+    transition: transform 0.3s ease, width 0.3s ease;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
   }
-  
-  .tab-button {
-    padding: 11px 14px;
-    font-size: 13px;
-    min-height: 46px;
+
+  .sidebar.collapsed {
+    transform: translateX(-100%);
+    width: 220px;
+    min-width: 220px;
   }
-  
-  .tab-button:not(:last-child)::after {
-    top: 15%;
-    height: 70%;
+
+  .main-content {
+    padding: 16px;
+  }
+
+  .sidebar-toggle {
+    position: fixed;
+    left: 8px;
+    top: 12px;
+    z-index: 110;
+    background: rgba(26, 29, 46, 0.9);
+    color: #fff;
+    border-radius: 8px;
+    width: 36px;
+    height: 36px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  .sidebar-toggle:hover {
+    background: #1a1d2e;
   }
 }
 
-/* 超小屏幕优化 */
 @media (max-width: 480px) {
-  .tab-button {
-    font-size: 12px;
-    padding: 10px 12px;
-    min-height: 44px;
+  .main-content {
+    padding: 10px;
   }
 }
+
