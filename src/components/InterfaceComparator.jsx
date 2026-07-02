@@ -1,6 +1,11 @@
 import { useState, useMemo } from 'react'
 import * as XLSX from 'xlsx'
-import './InterfaceComparator.css'
+import { Button } from './ui/button'
+import { Textarea } from './ui/textarea'
+import { Label } from './ui/label'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
+import { Separator } from './ui/separator'
+import { Upload, Play, Loader2, GitCompare, FileText, Check, X } from 'lucide-react'
 
 const InterfaceComparator = () => {
   const [files, setFiles] = useState([])
@@ -236,48 +241,35 @@ const InterfaceComparator = () => {
   }
 
   return (
-    <div className="interface-comparator">
-      <div className="input-section">
-        <div className="form-group">
-          <label>选择 Excel 文件（至少2个）:</label>
-          <input
-            type="file"
-            accept=".xlsx,.xls"
-            multiple
-            onChange={handleFileChange}
-          />
+    <Card className="w-full max-w-[860px] mx-auto">
+      <CardContent className="space-y-4 pt-6">
+        {/* 文件选择 */}
+        <div className="space-y-2">
+          <Label htmlFor="ic-files">选择 Excel 文件（至少2个）</Label>
+          <input id="ic-files" type="file" accept=".xlsx,.xls" multiple onChange={handleFileChange}
+            className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm file:border-0 file:bg-primary file:text-primary-foreground file:text-sm file:font-medium file:px-3 file:py-1 file:mr-3 file:rounded hover:file:bg-primary/90" />
           {files.length > 0 && (
-            <div className="file-list">
-              <p>已选择 {files.length} 个文件:</p>
-              <ul>
-                {files.map((f, i) => (
-                  <li key={i}>{f.name}</li>
-                ))}
+            <div className="mt-2">
+              <p className="text-sm text-muted-foreground font-medium mb-1">已选择 {files.length} 个文件：</p>
+              <ul className="text-sm text-muted-foreground list-disc list-inside space-y-0.5">
+                {files.map((f, i) => <li key={i}>{f.name}</li>)}
               </ul>
             </div>
           )}
         </div>
 
+        {/* 比对配对（多文件时） */}
         {files.length > 2 && (
-          <div className="form-group">
-            <label>比对配对（每行两个文件名/前缀，空格分隔）:</label>
-            <textarea
-              className="pair-textarea"
-              rows={6}
-              placeholder={"留空则按文件名相似度自动匹配\n\n手动指定示例:\n文件A 文件B\n前缀C 前缀D"}
-              value={pairText}
-              onChange={(e) => setPairText(e.target.value)}
-            />
+          <div className="space-y-2">
+            <Label htmlFor="ic-pairs">比对配对（每行两个文件名/前缀，空格分隔）</Label>
+            <Textarea id="ic-pairs" rows={6} value={pairText} onChange={e => setPairText(e.target.value)}
+              placeholder="留空则按文件名相似度自动匹配&#10;&#10;手动指定示例:&#10;文件A 文件B&#10;前缀C 前缀D" className="font-mono" />
             {!pairText.trim() && autoPairs.length > 0 && (
-              <div className="auto-pair-preview">
-                <p>📌 将按文件名相似度自动匹配以下 {autoPairs.length} 对：</p>
-                <ul>
+              <div className="p-3 rounded-md bg-blue-50 border border-blue-200 text-sm">
+                <p className="font-medium text-blue-800 mb-1">将按文件名相似度自动匹配以下 {autoPairs.length} 对：</p>
+                <ul className="space-y-0.5 text-blue-700">
                   {autoPairs.map((p, i) => (
-                    <li key={i}>
-                      <span className="file-a">{p.left.name}</span>
-                      {' ↔ '}
-                      <span className="file-b">{p.right.name}</span>
-                    </li>
+                    <li key={i} className="font-mono text-xs">{p.left.name}  ↔  {p.right.name}</li>
                   ))}
                 </ul>
               </div>
@@ -285,70 +277,80 @@ const InterfaceComparator = () => {
           </div>
         )}
 
-        <div className="form-group">
-          <button
-            className="btn-primary"
-            onClick={handleCompare}
-            disabled={loading || files.length < 2}
-          >
+        {/* 操作按钮 */}
+        <div className="flex justify-end">
+          <Button onClick={handleCompare} disabled={loading || files.length < 2}>
+            {loading ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Play className="w-4 h-4 mr-1.5" />}
             {loading ? '比对中...' : '开始比对'}
-          </button>
+          </Button>
         </div>
-      </div>
+      </CardContent>
 
+      {/* 比对结果 */}
       {results.length > 0 && (
-        <div className="result-section">
-          {results.map((result, idx) => (
-            <div key={idx} className="compare-result">
-              <h3>
-                比对 {idx + 1}: <span className="file-a">{result.leftFile}</span>
-                {' ↔ '}
-                <span className="file-b">{result.rightFile}</span>
-              </h3>
-
-              {result.error ? (
-                <p className="error-msg">错误: {result.error}</p>
-              ) : result.diffs.length === 0 ? (
-                <p className="success-msg">
-                  ✅ 两个文件在第2个sheet页（"{result.leftSheet}"）的前三列完全一致，共 {result.totalRows} 行。
-                </p>
-              ) : (
-                <div>
-                  <p className="diff-summary">
-                    Sheet: "{result.leftSheet}" / "{result.rightSheet}"，
-                    共 {result.totalRows} 行，发现 {result.diffs.length} 行差异：
-                  </p>
-                  <div className="diff-table-wrapper">
-                    <table className="diff-table">
-                      <thead>
-                        <tr>
-                          <th>行号</th>
-                          <th>列</th>
-                          <th>{result.leftFile}</th>
-                          <th>{result.rightFile}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {result.diffs.map((diff, di) => (
-                          diff.colDiffs.map((cd, ci) => (
-                            <tr key={`${di}-${ci}`}>
-                              <td>{diff.row}</td>
-                              <td>列 {getColLabel(cd.col)}</td>
-                              <td className="cell-a">{cd.valA || '(空)'}</td>
-                              <td className="cell-b">{cd.valB || '(空)'}</td>
-                            </tr>
-                          ))
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+        <>
+          <Separator />
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <GitCompare className="w-5 h-5 text-primary" />比对结果
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {results.map((result, idx) => (
+              <div key={idx} className="border rounded-lg overflow-hidden">
+                <div className="px-4 py-3 bg-muted/50 border-b">
+                  <h3 className="text-sm font-semibold">
+                    比对 {idx + 1}：<span className="font-mono text-primary">{result.leftFile}</span>
+                    {' ↔ '}
+                    <span className="font-mono text-primary">{result.rightFile}</span>
+                  </h3>
                 </div>
-              )}
-            </div>
-          ))}
-        </div>
+                <div className="p-4">
+                  {result.error ? (
+                    <p className="text-sm text-red-600">错误: {result.error}</p>
+                  ) : result.diffs.length === 0 ? (
+                    <div className="flex items-center gap-2 text-sm text-emerald-600">
+                      <Check className="w-4 h-4" />
+                      两个文件在第2个Sheet页（"{result.leftSheet}"）的前三列完全一致，共 {result.totalRows} 行。
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Sheet: "{result.leftSheet}" / "{result.rightSheet}"，共 {result.totalRows} 行，发现 {result.diffs.length} 行差异：
+                      </p>
+                      <div className="overflow-auto">
+                        <table className="w-full text-sm border-collapse">
+                          <thead>
+                            <tr className="bg-muted/50">
+                              <th className="px-3 py-2 text-left border font-medium">行号</th>
+                              <th className="px-3 py-2 text-left border font-medium">列</th>
+                              <th className="px-3 py-2 text-left border font-medium">{result.leftFile}</th>
+                              <th className="px-3 py-2 text-left border font-medium">{result.rightFile}</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {result.diffs.map((diff, di) =>
+                              diff.colDiffs.map((cd, ci) => (
+                                <tr key={`${di}-${ci}`} className="hover:bg-muted/30">
+                                  <td className="px-3 py-1.5 border text-muted-foreground">{diff.row}</td>
+                                  <td className="px-3 py-1.5 border font-mono text-xs">列 {['A','B','C'][cd.col-1]}</td>
+                                  <td className="px-3 py-1.5 border font-mono text-xs text-amber-700">{cd.valA || '(空)'}</td>
+                                  <td className="px-3 py-1.5 border font-mono text-xs text-blue-700">{cd.valB || '(空)'}</td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </>
       )}
-    </div>
+    </Card>
   )
 }
 

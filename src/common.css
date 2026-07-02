@@ -1,22 +1,22 @@
 /* ================================================================
-   Design System — Unified CSS Tokens & Shared Utilities
+   Design System — shadcn/ui aligned tokens
    ================================================================ */
 
 :root {
-  /* ---- Palette ---- */
-  --color-bg:          #f3f4f6;
-  --color-surface:     #ffffff;
-  --color-border:      #e5e7eb;
+  /* ---- Palette (aligned with shadcn/ui) ---- */
+  --color-bg:          hsl(210 40% 96.1%);
+  --color-surface:     hsl(0 0% 100%);
+  --color-border:      hsl(214.3 31.8% 91.4%);
   --color-border-light:#f0f0f0;
 
-  --color-text:        #1f2937;
-  --color-text-secondary: #6b7280;
-  --color-text-muted:  #9ca3af;
+  --color-text:        hsl(222.2 84% 4.9%);
+  --color-text-secondary: hsl(215.4 16.3% 46.9%);
+  --color-text-muted:  hsl(215 20.2% 65.1%);
 
-  --color-primary:     #667eea;
-  --color-primary-hover: #5568d3;
+  --color-primary:     hsl(221.2 83.2% 53.3%);
+  --color-primary-hover: hsl(221.2 83.2% 48%);
   --color-success:     #10b981;
-  --color-danger:      #ef4444;
+  --color-danger:      hsl(0 84.2% 60.2%);
   --color-warning:     #f59e0b;
   --color-info:        #3b82f6;
 
@@ -24,13 +24,13 @@
   --font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Courier New', monospace;
 
-  --text-xs:  0.75rem;   /* 12px */
-  --text-sm:  0.8125rem; /* 13px */
-  --text-base: 0.875rem; /* 14px */
-  --text-md:  0.9375rem; /* 15px */
-  --text-lg:  1rem;      /* 16px */
-  --text-xl:  1.125rem;  /* 18px */
-  --text-2xl: 1.25rem;   /* 20px */
+  --text-xs:  0.75rem;
+  --text-sm:  0.875rem;
+  --text-base: 1rem;
+  --text-md:  0.9375rem;
+  --text-lg:  1rem;
+  --text-xl:  1.125rem;
+  --text-2xl: 1.25rem;
 
   /* ---- Spacing ---- */
   --space-1:  4px;
@@ -44,15 +44,15 @@
 
   /* ---- Border Radius ---- */
   --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 20px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
 
   /* ---- Shadows ---- */
   --shadow-sm:  0 1px 2px rgba(0,0,0,.05);
-  --shadow-md:  0 4px 12px rgba(0,0,0,.08);
-  --shadow-lg:  0 8px 24px rgba(0,0,0,.10);
-  --shadow-focus: 0 0 0 3px rgba(102,126,234,.12);
+  --shadow-md:  0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
+  --shadow-lg:  0 4px 6px rgba(0,0,0,.1);
+  --shadow-focus: 0 0 0 3px hsla(221.2, 83.2%, 53.3%, 0.12);
 
   /* ---- Transitions ---- */
   --transition-fast: 0.15s ease;
@@ -114,7 +114,7 @@
   letter-spacing: 0.01em;
 }
 
-/* ---- Text inputs / textareas ---- */
+/* ---- Text inputs / textareas (shadcn-style) ---- */
 .input-section textarea,
 .string-input-group textarea,
 .input-section input[type="text"],
@@ -128,8 +128,8 @@
 .pair-textarea,
 .job-output {
   width: 100%;
-  padding: 11px 14px;
-  border: 1.5px solid var(--color-border);
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
   font-family: var(--font-sans);
@@ -145,6 +145,7 @@
   font-family: var(--font-mono);
   font-size: var(--text-sm);
   line-height: 1.6;
+  min-height: 80px;
 }
 
 .input-section textarea:focus,
@@ -153,11 +154,11 @@
 .regex-input-container input[type="text"]:focus,
 .form-row input:focus,
 .pair-textarea:focus {
-  border-color: var(--accent, var(--color-primary));
-  box-shadow: var(--shadow-focus);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px hsla(221.2, 83.2%, 53.3%, 0.12);
 }
 
-/* ---- Buttons ---- */
+/* ---- Buttons (shadcn-style) ---- */
 .clear-btn,
 .copy-btn,
 .copy-total-btn,
@@ -174,11 +175,11 @@
   color: #fff;
   border: none;
   border-radius: var(--radius-md);
-  font-weight: 600;
+  font-weight: 500;
   font-size: var(--text-sm);
   line-height: 1;
-  min-height: 38px;
-  padding: 10px 18px;
+  min-height: 36px;
+  padding: 8px 16px;
   cursor: pointer;
   transition: all var(--transition-base);
   white-space: nowrap;
@@ -186,11 +187,12 @@
 }
 
 .clear-btn {
-  background: #9ca3af;
+  background: transparent;
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
 }
 .clear-btn:hover:not(:disabled) {
-  background: #6b7280;
-  transform: translateY(-1px);
+  background: hsl(210 40% 96.1%);
 }
 
 .copy-btn,
@@ -201,8 +203,7 @@
 .download-btn,
 .process-btn,
 .btn-primary {
-  background: var(--accent, var(--color-primary));
-  box-shadow: 0 2px 8px rgba(0,0,0,.10);
+  background: var(--color-primary);
 }
 .copy-btn:hover:not(:disabled),
 .copy-total-btn:hover:not(:disabled),
@@ -212,9 +213,7 @@
 .download-btn:hover:not(:disabled),
 .process-btn:hover:not(:disabled),
 .btn-primary:hover:not(:disabled) {
-  filter: brightness(1.08);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(0,0,0,.14);
+  background: var(--color-primary-hover);
 }
 
 .clear-btn:disabled,
@@ -226,11 +225,8 @@
 .download-btn:disabled,
 .process-btn:disabled,
 .btn-primary:disabled {
-  background: #d1d5db;
-  color: #9ca3af;
+  opacity: 0.5;
   cursor: not-allowed;
-  box-shadow: none;
-  transform: none;
 }
 
 /* ---- Action bar ---- */

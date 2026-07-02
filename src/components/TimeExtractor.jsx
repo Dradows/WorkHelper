@@ -1,4 +1,10 @@
 import React, { useState, useEffect } from 'react'
+import { Button } from './ui/button'
+import { Textarea } from './ui/textarea'
+import { Label } from './ui/label'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
+import { Separator } from './ui/separator'
+import { Trash2, Sparkles, Copy, Check, Clock } from 'lucide-react'
 
 const sampleText = 'plan 1.5\u5c0f\u65f6, dev 2\u5c0f\u65f6, review 0.5\u5c0f\u65f6'
 
@@ -6,215 +12,114 @@ const TimeExtractor = () => {
   const [inputText, setInputText] = useState('')
   const [extractedTimes, setExtractedTimes] = useState([])
   const [totalHours, setTotalHours] = useState(0)
-  const [copySuccess, setCopySuccess] = useState(false)
+  const [copyTotalSuccess, setCopyTotalSuccess] = useState(false)
+  const [copyDetailSuccess, setCopyDetailSuccess] = useState(false)
 
-  // 提取时间并计算总和
   useEffect(() => {
-    if (!inputText.trim()) {
-      setExtractedTimes([])
-      setTotalHours(0)
-      return
-    }
-
-    // 正则表达式匹配时间格式
+    if (!inputText.trim()) { setExtractedTimes([]); setTotalHours(0); return }
     const timeRegex = /(\d+(?:\.\d+)?)\s*小时/g
-    const matches = []
-    let match
-    let total = 0
-
-    // 提取所有匹配的时间
+    const matches = []; let match; let total = 0
     while ((match = timeRegex.exec(inputText)) !== null) {
       const hours = parseFloat(match[1])
-      matches.push({
-        text: match[0],
-        hours: hours,
-        index: match.index
-      })
+      matches.push({ text: match[0], hours, index: match.index })
       total += hours
     }
-
-    setExtractedTimes(matches)
-    setTotalHours(total)
+    setExtractedTimes(matches); setTotalHours(total)
   }, [inputText])
 
-  // 复制总小时数
-  const handleCopyTotal = async () => {
-    try {
-      await navigator.clipboard.writeText(totalHours.toString())
-      setCopySuccess(true)
-      
-      setTimeout(() => {
-        setCopySuccess(false)
-      }, 3000)
-    } catch (err) {
-      console.error('复制失败:', err)
-      // 降级方案
-      const textArea = document.createElement('textarea')
-      textArea.value = totalHours.toString()
-      document.body.appendChild(textArea)
-      textArea.select()
-      document.execCommand('copy')
-      document.body.removeChild(textArea)
-      
-      setCopySuccess(true)
-      setTimeout(() => {
-        setCopySuccess(false)
-      }, 3000)
+  const doCopy = async (text, setSuccess) => {
+    try { await navigator.clipboard.writeText(text) } catch {
+      const ta = document.createElement('textarea'); ta.value = text
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove()
     }
+    setSuccess(true); setTimeout(() => setSuccess(false), 2000)
   }
 
-  // 复制详细结果
-  const handleCopyDetails = async () => {
-    const details = extractedTimes.map(item => item.text).join(', ')
-    try {
-      await navigator.clipboard.writeText(details)
-      setCopySuccess(true)
-      
-      setTimeout(() => {
-        setCopySuccess(false)
-      }, 3000)
-    } catch (err) {
-      console.error('复制失败:', err)
-      // 降级方案
-      const textArea = document.createElement('textarea')
-      textArea.value = details
-      document.body.appendChild(textArea)
-      textArea.select()
-      document.execCommand('copy')
-      document.body.removeChild(textArea)
-      
-      setCopySuccess(true)
-      setTimeout(() => {
-        setCopySuccess(false)
-      }, 3000)
-    }
-  }
-
-  // 清空输入
-  const handleClear = () => {
-    setInputText('')
-    setExtractedTimes([])
-    setTotalHours(0)
-  }
-
-  const handleUseSample = () => {
-    setInputText(sampleText)
-  }
-
-  // 格式化小时数显示
-  const formatHours = (hours) => {
-    if (Number.isInteger(hours)) {
-      return `${hours}小时`
-    } else {
-      return `${hours}小时`
-    }
-  }
+  const handleClear = () => { setInputText(''); setExtractedTimes([]); setTotalHours(0) }
+  const handleUseSample = () => setInputText(sampleText)
 
   return (
-    <div className="time-extractor">
-      <div className="input-section">
-        <label htmlFor="text-input">输入包含时间的文本：</label>
-        <textarea
-          id="text-input"
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          placeholder="请输入包含时间的文本，例如：&#10;今天工作了3小时，明天计划2.5小时&#10;或者：上午1.5小时，下午2小时，晚上1小时"
-          rows={6}
-        />
-        <div className="input-controls">
-          <button 
-            className="clear-btn"
-            onClick={handleClear}
-            disabled={!inputText.trim()}
-          >
-            清空输入
-          </button>
-          <button
-            className="process-btn"
-            type="button"
-            onClick={handleUseSample}
-          >
-            示例
-          </button>
+    <Card className="w-full max-w-[860px] mx-auto">
+      <CardContent className="space-y-4 pt-6">
+        <div className="space-y-2">
+          <Label htmlFor="text-input">输入包含时间的文本</Label>
+          <Textarea id="text-input" value={inputText} onChange={e => setInputText(e.target.value)}
+            placeholder="请输入包含时间的文本，例如：今天工作了3小时，明天计划2.5小时" rows={6} className="font-mono" />
         </div>
-      </div>
+        <div className="flex justify-end gap-3">
+          <Button variant="outline" size="sm" onClick={handleClear} disabled={!inputText.trim()}>
+            <Trash2 className="w-4 h-4 mr-1.5" />清空
+          </Button>
+          <Button size="sm" onClick={handleUseSample}>
+            <Sparkles className="w-4 h-4 mr-1.5" />示例
+          </Button>
+        </div>
+      </CardContent>
 
-      <div className="total-section">
-        <h3>总计：</h3>
-        <div className="total-display">
-          <span className="total-label">总小时数：</span>
-          <span className="total-value">{formatHours(totalHours)}</span>
+      <Separator />
+
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Clock className="w-5 h-5 text-primary" />总计
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            <span className="text-2xl font-bold text-primary">{totalHours}</span>
+            <span className="text-sm text-muted-foreground">小时</span>
+          </div>
         </div>
-        
-        <div className="total-controls">
-          <button
-            className="copy-total-btn"
-            onClick={handleCopyTotal}
-            disabled={totalHours === 0}
-          >
-            {copySuccess ? '复制成功！' : '复制总小时数'}
-          </button>
-          
+        <div className="flex gap-2 pt-1">
+          <Button size="sm" variant={copyTotalSuccess ? "secondary" : "default"} onClick={() => doCopy(totalHours.toString(), setCopyTotalSuccess)} disabled={totalHours === 0}>
+            {copyTotalSuccess ? <Check className="w-4 h-4 mr-1.5" /> : <Copy className="w-4 h-4 mr-1.5" />}
+            {copyTotalSuccess ? '已复制' : '复制总小时数'}
+          </Button>
           {extractedTimes.length > 0 && (
-            <button
-              className="copy-details-btn"
-              onClick={handleCopyDetails}
-            >
-              复制详细结果
-            </button>
+            <Button size="sm" variant="outline" onClick={() => doCopy(extractedTimes.map(i => i.text).join(', '), setCopyDetailSuccess)}>
+              {copyDetailSuccess ? <Check className="w-4 h-4 mr-1.5" /> : <Copy className="w-4 h-4 mr-1.5" />}
+              {copyDetailSuccess ? '已复制' : '复制详细结果'}
+            </Button>
           )}
         </div>
-      </div>
+      </CardHeader>
 
-      <div className="extraction-section">
-        <h3>提取结果：</h3>
-        
+      <CardContent>
         {extractedTimes.length > 0 ? (
-          <div className="extracted-list">
-            <div className="list-header">
-              <span>序号</span>
-              <span>时间文本</span>
-              <span>小时数</span>
+          <div className="border rounded-lg overflow-hidden">
+            <div className="grid grid-cols-[60px_1fr_100px] gap-2 px-4 py-2.5 bg-muted/50 text-sm font-semibold border-b">
+              <span>序号</span><span>时间文本</span><span>小时数</span>
             </div>
-            {extractedTimes.map((item, index) => (
-              <div key={index} className="list-item">
-                <span className="item-index">{index + 1}</span>
-                <span className="item-text">{item.text}</span>
-                <span className="item-hours">{item.hours}小时</span>
+            {extractedTimes.map((item, i) => (
+              <div key={i} className="grid grid-cols-[60px_1fr_100px] gap-2 px-4 py-2.5 text-sm border-b last:border-0 hover:bg-muted/30 transition-colors">
+                <span className="text-muted-foreground">{i + 1}</span>
+                <span className="font-mono">{item.text}</span>
+                <span className="font-semibold">{item.hours} 小时</span>
               </div>
             ))}
           </div>
         ) : (
-          <div className="no-results">
+          <div className="min-h-[100px] flex items-center justify-center border-2 border-dashed rounded-lg bg-muted/20 text-muted-foreground text-sm">
             {inputText.trim() ? '未找到时间格式，请检查输入' : '输入内容后将在此显示提取结果'}
           </div>
         )}
-      </div>
+      </CardContent>
 
-      <div className="usage-tips">
-        <h4>使用说明：</h4>
-        <ul>
+      <Separator />
+
+      <CardContent className="py-4">
+        <h4 className="text-sm font-semibold mb-2">使用说明</h4>
+        <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside mb-3">
           <li>支持格式：3小时、2.5小时、1.25小时等</li>
           <li>自动识别并提取所有时间信息</li>
           <li>实时计算总小时数</li>
-          <li>支持复制总小时数或详细结果</li>
           <li>支持小数时间（如2.5小时）</li>
         </ul>
-        
-        <h4>示例输入：</h4>
-        <div className="examples">
-          <div className="example-item">
-            <strong>输入：</strong>今天工作了3小时，明天计划2.5小时
-          </div>
-          <div className="example-item">
-            <strong>提取：</strong>3小时, 2.5小时
-          </div>
-          <div className="example-item">
-            <strong>总计：</strong>5.5小时
-          </div>
+        <div className="p-3 rounded-md bg-muted/50 border text-sm space-y-1">
+          <p><strong>示例输入：</strong>今天工作了3小时，明天计划2.5小时</p>
+          <p><strong>提取结果：</strong>3小时, 2.5小时</p>
+          <p><strong>总计：</strong>5.5小时</p>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 }
 

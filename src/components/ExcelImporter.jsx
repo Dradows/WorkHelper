@@ -1,7 +1,13 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import * as XLSX from 'xlsx'
 import JSZip from 'jszip'
-// templates no longer used for DDL generation; DDLs will be built from Excel content
+import { Button } from './ui/button'
+import { Input } from './ui/input'
+import { Label } from './ui/label'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
+import { Separator } from './ui/separator'
+import { Upload, Download, FileSpreadsheet, FileText, Eye, Sparkles } from 'lucide-react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 
 const ExcelImporter = () => {
   const [fileName, setFileName] = useState('')
@@ -185,12 +191,12 @@ const ExcelImporter = () => {
     }
 
     const handleDownloadTemplate = () => {
-      // Empty template: only structure, no sample data
+      // Empty template: 2 sheets
       const wb = XLSX.utils.book_new()
-      const ws = makeSheet('', '', '', '', '', [])
-      XLSX.utils.book_append_sheet(wb, ws, 'Sheet1')
+      XLSX.utils.book_append_sheet(wb, makeSheet('', '', '', '', '', []), 'Sheet1')
+      XLSX.utils.book_append_sheet(wb, makeSheet('', '', '', '', '', []), 'Sheet2')
       XLSX.writeFile(wb, 'template.xlsx')
-      setMessages(prev => [...prev, '已下载空模板文件 template.xlsx。'])
+      setMessages(prev => [...prev, '已下载模板文件 template.xlsx（2 个 Sheet）。'])
     }
 
     const handleDownloadExample = () => {
@@ -222,6 +228,21 @@ const ExcelImporter = () => {
       setMessages(prev => [...prev, '已下载示例文件 test.xlsx，包含 2 个 sheet。'])
     }
 
+  // Preview: build DDL content per sheet (array of { sheet, ddl, init, table })
+  const previewSheets = useMemo(() => {
+    if (!sheetInfos.length || !name || !createDate || !orderNo) return []
+    return sheetInfos.map((info) => {
+      const rawTable = info.tableName || info.sheet
+      const table = String(rawTable).toLowerCase().replace(/[^a-z0-9_]/g, '_')
+      const ddlContent = buildDDLFromInfo(info)
+      const rawSchema = info.schema || ''
+      const schema = rawSchema ? String(rawSchema).toLowerCase().replace(/[^a-z0-9_]/g, '_') : 'chn_rskdata'
+      const initBody = ddlContent.replace(/(CREATE TABLE\s)/, `DROP TABLE IF EXISTS ${schema}.${table};\n\n$1`)
+      const initContent = initBody + `\nDROP TABLE IF EXISTS ${schema}.${table}_dt;\nCREATE TABLE ${schema}.${table}_dt like ${schema}.${table};\n`
+      return { sheet: info.sheet, table: `rsk_chn_${table}`, ddl: ddlContent, init: initContent }
+    })
+  }, [sheetInfos, name, createDate, orderNo])
+
   const handleGenerate = () => {
     if (!name || !createDate || !orderNo) {
       setMessages(prev => [...prev, '请填写 姓名、创建日期 和 单号。'])
@@ -240,7 +261,8 @@ const ExcelImporter = () => {
           const rawSchema = info.schema || ''
           const schema = rawSchema ? String(rawSchema).toLowerCase().replace(/[^a-z0-9_]/g, '_') : 'chn_rskdata'
           // For init file, before creating the _dt table, add DROP IF EXISTS for the _dt
-          const initContent = ddlContent + `\nDROP TABLE IF EXISTS ${schema}.${table}_dt;\nCREATE TABLE ${schema}.${table}_dt like ${schema}.${table};\n`
+          const initBody = ddlContent.replace(/(CREATE TABLE\s)/, `DROP TABLE IF EXISTS ${schema}.${table};\n\n$1`)
+          const initContent = initBody + `\nDROP TABLE IF EXISTS ${schema}.${table}_dt;\nCREATE TABLE ${schema}.${table}_dt like ${schema}.${table};\n`
           const ddlName = `rsk_chn_${table}_ddl.sql`
           const initName = `rsk_chn_${table}_init.sql`
           zip.file(ddlName, ddlContent)
@@ -267,48 +289,119 @@ const ExcelImporter = () => {
   }
 
   return (
-    <div className="container">
-      <div className="input-section">
-        <label>Excel 文件（第一张表）</label>
-        <input type="file" accept=".xls,.xlsx" onChange={handleFile} />
-        {fileName && <div className="small">已选: {fileName}</div>}
-      </div>
-
-      <div className="input-section">
-        <label>创建者（姓名）</label>
-        <input value={name} onChange={e => setName(e.target.value)} placeholder="请输入姓名" />
-      </div>
-
-      <div className="input-section">
-        <label>创建日期</label>
-        <input type="date" value={createDate} onChange={e => setCreateDate(e.target.value)} />
-      </div>
-
-      <div className="input-section">
-        <label>单号</label>
-        <input value={orderNo} onChange={e => setOrderNo(e.target.value)} placeholder="请输入单号" />
-      </div>
-
-      <div className="actions-bar">
-        <div className="actions-bar-btns">
-          <button className="download-btn" onClick={handleGenerate}>生成并下载 SQL 文件</button>
-          <button className="download-btn" onClick={handleDownloadTemplate}>下载模板</button>
-          <button className="download-btn" onClick={handleDownloadExample}>下载示例</button>
+    <Card className="w-full max-w-[860px] mx-auto">
+      <CardContent className="space-y-4 pt-6">
+        {/* Excel 文件上传 */}
+        <div className="space-y-2">
+          <Label htmlFor="excel-file">Excel 文件</Label>
+          <input id="excel-file" type="file" accept=".xls,.xlsx" onChange={handleFile}
+            className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm file:border-0 file:bg-primary file:text-primary-foreground file:text-sm file:font-medium file:px-3 file:py-1 file:mr-3 file:rounded hover:file:bg-primary/90" />
+          {fileName && <p className="text-sm text-muted-foreground">已选: {fileName}</p>}
         </div>
-        <div className="msg-list">
-          {messages.map((m, i) => (
-            <div key={i} className="msg">{m}</div>
-          ))}
-        </div>
-      </div>
 
-      <div className="notes" style={{ padding: '20px' }}>
-        <p>说明：</p>
-        <ul>
-          <li>基于 Excel 中每个 sheet 的定义（B1 表名，B2 平台，B3 表空间，B4 表描述，B5 备注，B6 起为字段：B=字段名 C=字段类型 D=字段描述）生成 DDL 与 INIT 文件。</li>
+        {/* 表单行 */}
+        <div className="grid grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="creator-name">创建者（姓名）</Label>
+            <Input id="creator-name" value={name} onChange={e => setName(e.target.value)} placeholder="请输入姓名" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="create-date">创建日期</Label>
+            <Input id="create-date" type="date" value={createDate} onChange={e => setCreateDate(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="order-no">单号</Label>
+            <Input id="order-no" value={orderNo} onChange={e => setOrderNo(e.target.value)} placeholder="请输入单号" />
+          </div>
+        </div>
+
+        {/* 操作按钮 */}
+        <div className="flex gap-2 flex-wrap">
+          <Button size="sm" onClick={handleGenerate} disabled={!sheetInfos.length}>
+            <Download className="w-4 h-4 mr-1.5" />生成并下载 SQL 文件
+          </Button>
+          <Button size="sm" variant="outline" onClick={handleDownloadTemplate}>
+            <FileSpreadsheet className="w-4 h-4 mr-1.5" />下载模板
+          </Button>
+          <Button size="sm" variant="outline" onClick={handleDownloadExample}>
+            <Sparkles className="w-4 h-4 mr-1.5" />下载示例
+          </Button>
+        </div>
+
+        {/* 消息列表 */}
+        {messages.length > 0 && (
+          <div className="space-y-1">
+            {messages.map((m, i) => (
+              <p key={i} className="text-sm text-muted-foreground font-medium">{m}</p>
+            ))}
+          </div>
+        )}
+      </CardContent>
+
+      <Separator />
+
+      {/* 预览区域 */}
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Eye className="w-5 h-5 text-primary" />SQL 预览
+          </CardTitle>
+          {previewSheets.length > 0 && (
+            <span className="text-sm text-muted-foreground font-medium">{previewSheets.length} 个 Sheet</span>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        {previewSheets.length > 0 ? (
+          <Tabs defaultValue={previewSheets[0].sheet} className="w-full">
+            <TabsList className="mb-3 flex-wrap h-auto gap-1">
+              {previewSheets.map((ps) => (
+                <TabsTrigger key={ps.sheet} value={ps.sheet} className="text-xs">
+                  {ps.sheet}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+            {previewSheets.map((ps) => (
+              <TabsContent key={ps.sheet} value={ps.sheet} className="mt-0">
+                <Tabs defaultValue={`${ps.sheet}-ddl`} className="w-full">
+                  <TabsList className="mb-2 h-auto gap-1 bg-muted/50">
+                    <TabsTrigger value={`${ps.sheet}-ddl`} className="text-xs py-1">DDL</TabsTrigger>
+                    <TabsTrigger value={`${ps.sheet}-init`} className="text-xs py-1">INIT</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value={`${ps.sheet}-ddl`} className="mt-0">
+                    <pre className="p-4 rounded-md bg-muted/50 border font-mono text-xs whitespace-pre-wrap max-h-[500px] overflow-auto leading-relaxed">
+                      {`-- ${ps.table}_ddl.sql\n${ps.ddl}`}
+                    </pre>
+                  </TabsContent>
+                  <TabsContent value={`${ps.sheet}-init`} className="mt-0">
+                    <pre className="p-4 rounded-md bg-muted/50 border font-mono text-xs whitespace-pre-wrap max-h-[500px] overflow-auto leading-relaxed">
+                      {`-- ${ps.table}_init.sql\n${ps.init}`}
+                    </pre>
+                  </TabsContent>
+                </Tabs>
+              </TabsContent>
+            ))}
+          </Tabs>
+        ) : (
+          <div className="min-h-[150px] flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-lg bg-muted/20 text-muted-foreground text-sm">
+            <FileText className="w-8 h-8 opacity-40" />
+            <p>{!sheetInfos.length ? '请先上传 Excel 文件' : '请填写 姓名、创建日期 和 单号 以生成预览'}</p>
+          </div>
+        )}
+      </CardContent>
+
+      <Separator />
+
+      {/* 使用说明 */}
+      <CardContent className="py-4">
+        <h4 className="text-sm font-semibold mb-2">使用说明</h4>
+        <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+          <li>基于 Excel 中每个 sheet 的定义生成 DDL 与 INIT 文件</li>
+          <li>B1 表名，B2 平台，B3 表空间，B4 表描述，B5 备注</li>
+          <li>B6 起为字段定义：B=字段名 C=字段类型 D=字段描述</li>
         </ul>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 }
 

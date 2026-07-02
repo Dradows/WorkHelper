@@ -1,5 +1,11 @@
 import React, { useState } from 'react'
 import JSZip from 'jszip'
+import { Button } from './ui/button'
+import { Label } from './ui/label'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
+import { Separator } from './ui/separator'
+import { Checkbox } from './ui/checkbox'
+import { Upload, Download, Play } from 'lucide-react'
 
 
 const SqlProcessor = () => {
@@ -298,30 +304,55 @@ const SqlProcessor = () => {
   }
 
   return (
-    <div className="container sql-processor">
-      <div className="input-section">
-        <label>选择要处理的 SQL 文件（可多选）：</label>
-        <input type="file" accept=".sql" multiple onChange={handleFile} />
-        {fileName && <div className="small">已选: {fileName}</div>}
-        {selectedFiles.length > 1 && <div className="small">已加载文件: {selectedFiles.map(f => f.name).join(', ')}</div>}
-        <div className="controls">
-          <label className="checkbox-inline">
-            <input type="checkbox" checked={addInitStatements} onChange={(e) => setAddInitStatements(e.target.checked)} />
-            <span>新增 drop/create 语句</span>
-          </label>
-          <button onClick={processSql} className="process-btn">开始处理</button>
-          <button onClick={downloadResult} className="download-btn" disabled={!processedSql}>下载结果</button>
+    <Card className="w-full max-w-[860px] mx-auto">
+      <CardContent className="space-y-4 pt-6">
+        <div className="space-y-2">
+          <Label htmlFor="sql-files">选择要处理的 SQL 文件（可多选）</Label>
+          <input id="sql-files" type="file" accept=".sql" multiple onChange={handleFile}
+            className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm file:border-0 file:bg-primary file:text-primary-foreground file:text-sm file:font-medium file:px-3 file:py-1 file:mr-3 file:rounded hover:file:bg-primary/90" />
+          {fileName && <p className="text-sm text-muted-foreground">已选: {fileName}</p>}
+          {selectedFiles.length > 1 && (
+            <p className="text-sm text-muted-foreground">已加载文件: {selectedFiles.map(f => f.name).join(', ')}</p>
+          )}
         </div>
-        <div className="msg-list">
-          {messages.map((m, i) => <div key={i} className="msg">{m}</div>)}
-        </div>
-      </div>
 
-      <div className="preview">
-        <h3>处理后预览</h3>
-        <pre className="preview-box">{processedSql || (processedFiles.length ? processedFiles.map(f => `-- ${f.name}\n${f.content}`).join('\n\n') : '处理结果将在此显示（会保留空行）')}</pre>
-      </div>
-    </div>
+        <div className="flex items-center gap-4 flex-wrap">
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <Checkbox checked={addInitStatements} onCheckedChange={c => setAddInitStatements(!!c)} />
+            <span className="text-sm">新增 drop/create 语句</span>
+          </label>
+          <div className="flex gap-2">
+            <Button size="sm" onClick={processSql}>
+              <Play className="w-4 h-4 mr-1.5" />开始处理
+            </Button>
+            <Button size="sm" variant="outline" onClick={downloadResult} disabled={!processedSql}>
+              <Download className="w-4 h-4 mr-1.5" />下载结果
+            </Button>
+          </div>
+        </div>
+
+        {messages.length > 0 && (
+          <div className="space-y-1">
+            {messages.map((m, i) => (
+              <p key={i} className="text-sm text-muted-foreground font-medium">{m}</p>
+            ))}
+          </div>
+        )}
+      </CardContent>
+
+      <Separator />
+
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg flex items-center gap-2">
+          <Upload className="w-5 h-5 text-primary" />处理后预览
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <pre className="p-4 rounded-md bg-muted/50 border font-mono text-sm whitespace-pre-wrap min-h-[200px] max-h-[600px] overflow-auto">
+          {processedSql || (processedFiles.length ? processedFiles.map(f => `-- ${f.name}\n${f.content}`).join('\n\n') : '处理结果将在此显示（会保留空行）')}
+        </pre>
+      </CardContent>
+    </Card>
   )
 }
 

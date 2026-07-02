@@ -1,9 +1,41 @@
 import { useMemo, useRef, useState } from 'react'
+import { Button } from './ui/button'
+import { Input } from './ui/input'
+import { Textarea } from './ui/textarea'
+import { Label } from './ui/label'
+import { Checkbox } from './ui/checkbox'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
+import { Separator } from './ui/separator'
+import { Trash2, Sparkles } from 'lucide-react'
 
-const sampleInput = `ROOT JOB_A 06:30:00 60
-JOB_A JOB_B 06:00:00 12
-JOB_A JOB_C 06:01:00 18
-JOB_B JOB_D 05:00:00 31`
+const sampleInput = `ROOT JOB_LOAD    06:30:00 60
+ROOT JOB_CHECK   06:28:00 45
+JOB_LOAD JOB_ETL_01  06:00:00 12
+JOB_LOAD JOB_ETL_02  06:05:00 18
+JOB_LOAD JOB_ETL_03  06:02:00 22
+JOB_CHECK JOB_VALID_01 05:55:00 15
+JOB_CHECK JOB_VALID_02 05:58:00 10
+JOB_ETL_01 JOB_CALC_A 05:30:00 30
+JOB_ETL_01 JOB_CALC_B 05:35:00 25
+JOB_ETL_02 JOB_CALC_C 05:40:00 20
+JOB_ETL_02 JOB_CALC_D 05:38:00 28
+JOB_ETL_03 JOB_CALC_E 05:50:00 16
+JOB_ETL_03 JOB_CALC_F 05:45:00 19
+JOB_VALID_01 JOB_CALC_G 05:20:00 35
+JOB_VALID_02 JOB_CALC_H 05:25:00 14
+JOB_CALC_A JOB_MERGE_01 04:30:00 8
+JOB_CALC_B JOB_MERGE_02 04:35:00 12
+JOB_CALC_C JOB_MERGE_03 04:40:00 10
+JOB_CALC_D JOB_MERGE_04 04:32:00 18
+JOB_CALC_E JOB_MERGE_01 04:28:00 22
+JOB_CALC_F JOB_MERGE_02 04:45:00 14
+JOB_CALC_G JOB_MERGE_03 04:50:00 9
+JOB_CALC_H JOB_MERGE_04 04:55:00 11
+JOB_MERGE_01 JOB_REPORT 03:30:00 45
+JOB_MERGE_02 JOB_REPORT 03:35:00 40
+JOB_MERGE_03 JOB_REPORT 03:40:00 38
+JOB_MERGE_04 JOB_REPORT 03:50:00 33
+JOB_REPORT JOB_ARCHIVE 02:00:00 20`
 
 const fieldNames = ['job_name', 'pre_job_name', 'pre_end_time', 'pre_use_time']
 const rootTimeToken = 'ROOT'
@@ -330,7 +362,6 @@ const DependencyGraph = () => {
     if (!input.trim()) return new Set()
     return getVisibleNodes(graph, expandedNodes.size ? expandedNodes : createDefaultVisibleNodes(graph, criticalNodeNames))
   }, [criticalNodeNames, expandedNodes, graph, input])
-  const layout = useMemo(() => computeLayout(graph, visibleNodes), [graph, visibleNodes])
   const criticalPath = useMemo(() => computeCriticalPath(graph), [graph])
   const downstreamNodes = useMemo(
     () => computeVisibleDownstreamNodes(graph, visibleNodes, hoveredNodeId),
@@ -345,7 +376,6 @@ const DependencyGraph = () => {
     criticalPath.highlightedNodes.forEach((id) => {
       if (visibleNodes.has(id)) filtered.add(id)
     })
-    // 保留那些有标黄子节点的根节点
     graph.roots.forEach((rootId) => {
       if (!visibleNodes.has(rootId)) return
       const children = graph.dependencyMap.get(rootId) || new Set()
@@ -356,6 +386,8 @@ const DependencyGraph = () => {
     })
     return filtered
   }, [showOnlyCriticalPath, visibleNodes, criticalPath.highlightedNodes, graph])
+
+  const layout = useMemo(() => computeLayout(graph, displayNodes), [graph, displayNodes])
 
   const displayEdges = showOnlyCriticalPath && criticalPath.highlightedEdges.size > 0
     ? visibleEdges.filter((edge) => criticalPath.highlightedEdges.has(getEdgeKey(edge.from, edge.to)))
@@ -426,74 +458,88 @@ const DependencyGraph = () => {
   }
 
   return (
-    <div className="container dependency-graph">
-      <div className="input-section">
-        <label htmlFor="dependency-input">依赖数据</label>
-        <textarea
-          id="dependency-input"
-          value={input}
-          onChange={(event) => handleInputChange(event.target.value)}
-          placeholder="粘贴数据：JOB_A JOB_B 12:31:10 31"
-          rows={8}
-        />
+    <Card className="w-full max-w-[860px] mx-auto">
+      <CardContent className="space-y-5 pt-6">
+        <div className="space-y-3">
+          <Label htmlFor="dependency-input">依赖数据</Label>
+          <Textarea
+            id="dependency-input"
+            value={input}
+            onChange={(event) => handleInputChange(event.target.value)}
+            placeholder="粘贴数据：JOB_A JOB_B 12:31:10 31"
+            rows={8}
+            className="font-mono text-sm"
+          />
 
-        <label htmlFor="critical-nodes" className="dependency-critical-label">关键节点</label>
-        <input
-          id="critical-nodes"
-          value={criticalInput}
-          onChange={(event) => handleCriticalInputChange(event.target.value)}
-          placeholder="多个节点可用空格、逗号或分号分隔，例如 JOB_063 JOB_100"
-        />
+          <Label htmlFor="critical-nodes">关键节点</Label>
+          <Input
+            id="critical-nodes"
+            value={criticalInput}
+            onChange={(event) => handleCriticalInputChange(event.target.value)}
+            placeholder="多个节点可用空格、逗号或分号分隔，例如 JOB_063 JOB_100"
+          />
 
-        <div className="dependency-actions">
-          <button className="clear-btn" type="button" onClick={handleClear} disabled={!input.trim()}>
-            清空
-          </button>
-          <button className="process-btn" type="button" onClick={handleUseSample}>
-            示例
-          </button>
-        </div>
-      </div>
-
-      <div className="dependency-output-section">
-        <div className="dependency-summary">
-          <h3>依赖图</h3>
-          <div className="dependency-summary-right">
-            <label className="dependency-critical-toggle">
-              <input
-                type="checkbox"
-                checked={showOnlyCriticalPath}
-                onChange={(e) => setShowOnlyCriticalPath(e.target.checked)}
-              />
-              <span>仅显示关键路径</span>
-            </label>
-            <span>{graph.nodes.size} 个节点 / {graph.edges.length} 条依赖</span>
+          <div className="flex justify-end gap-3 pt-1">
+            <Button variant="outline" size="sm" onClick={handleClear} disabled={!input.trim()}>
+              <Trash2 className="w-4 h-4 mr-1.5" />
+              清空
+            </Button>
+            <Button size="sm" onClick={handleUseSample}>
+              <Sparkles className="w-4 h-4 mr-1.5" />
+              示例
+            </Button>
           </div>
         </div>
+      </CardContent>
 
+      <Separator />
+
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg">依赖图</CardTitle>
+          <div className="flex items-center gap-4">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <Checkbox
+                checked={showOnlyCriticalPath}
+                onCheckedChange={(checked) => setShowOnlyCriticalPath(!!checked)}
+              />
+              <span className="text-sm font-medium text-amber-800">仅显示关键路径</span>
+            </label>
+            <span className="text-sm font-semibold text-muted-foreground">
+              {graph.nodes.size} 个节点 / {graph.edges.length} 条依赖
+            </span>
+          </div>
+        </div>
+      </CardHeader>
+
+      <CardContent>
         {parsed.errors.length > 0 && (
-          <div className="dependency-alert">
+          <div className="mb-3 p-3 rounded-md border border-red-200 bg-red-50 text-red-800 text-sm leading-relaxed">
             {parsed.errors.slice(0, 3).join('；')}
             {parsed.errors.length > 3 ? `；另有 ${parsed.errors.length - 3} 个问题` : ''}
           </div>
         )}
 
         {!input.trim() ? (
-          <div className="dependency-empty">输入数据后将在这里生成有向无环图</div>
+          <div className="min-h-[260px] flex items-center justify-center border-2 border-dashed rounded-lg bg-muted/30 text-muted-foreground text-sm">
+            输入数据后将在这里生成有向无环图
+          </div>
         ) : graph.nodes.size === 0 ? (
-          <div className="dependency-empty">没有解析到有效作业</div>
+          <div className="min-h-[260px] flex items-center justify-center border-2 border-dashed rounded-lg bg-muted/30 text-muted-foreground text-sm">
+            没有解析到有效作业
+          </div>
         ) : (
           <>
             {isLargeGraph && (
-              <div className="dependency-hint">
+              <div className="mb-3 p-3 rounded-md border border-blue-200 bg-blue-50 text-blue-800 text-sm leading-relaxed">
                 节点超过 30 个，已默认展示根节点及其依赖；点击带圆点的节点继续展开下一层。
               </div>
             )}
             <div
               ref={canvasRef}
-              className={`dependency-canvas ${isDraggingCanvas ? 'dependency-canvas-dragging' : ''}`}
+              className={`w-full h-[min(760px,78vh)] min-h-[320px] overflow-auto border rounded-lg cursor-grab select-none bg-[linear-gradient(#fafbfc,#fafbfc)_padding-box,repeating-linear-gradient(0deg,transparent_0,transparent_31px,#eef2f7_32px),repeating-linear-gradient(90deg,transparent_0,transparent_31px,#eef2f7_32px)] ${isDraggingCanvas ? 'cursor-grabbing' : ''}`}
               role="img"
-              aria-label="???????"
+              aria-label="依赖图画布"
               onMouseDown={handleCanvasMouseDown}
               onMouseMove={handleCanvasMouseMove}
               onMouseUp={handleCanvasMouseUp}
@@ -524,10 +570,7 @@ const DependencyGraph = () => {
                   return (
                     <path
                       key={`${edge.from}->${edge.to}`}
-                      className={[
-                        'dependency-edge',
-                        isCriticalEdge ? 'dependency-edge-highlighted' : '',
-                      ].filter(Boolean).join(' ')}
+                      className={`dependency-edge ${isCriticalEdge ? 'dependency-edge-highlighted' : ''}`}
                       d={`M ${startX} ${startY} C ${middleX} ${startY}, ${middleX} ${endY}, ${endX - 8} ${endY}`}
                       markerEnd={isCriticalEdge ? 'url(#dependency-arrow-highlighted)' : 'url(#dependency-arrow)'}
                     />
@@ -546,12 +589,7 @@ const DependencyGraph = () => {
                   return (
                     <g
                       key={id}
-                      className={[
-                        'dependency-node',
-                        hiddenCount ? 'dependency-node-expandable' : '',
-                        isHighlighted ? 'dependency-node-highlighted' : '',
-                        isDownstream ? 'dependency-node-downstream' : '',
-                      ].filter(Boolean).join(' ')}
+                      className={`dependency-node ${hiddenCount ? 'dependency-node-expandable' : ''} ${isHighlighted ? 'dependency-node-highlighted' : ''} ${isDownstream ? 'dependency-node-downstream' : ''}`}
                       transform={`translate(${position.x}, ${position.y})`}
                       onClick={() => handleNodeClick(id)}
                       onMouseEnter={() => setHoveredNodeId(id)}
@@ -584,8 +622,8 @@ const DependencyGraph = () => {
             </div>
           </>
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 }
 

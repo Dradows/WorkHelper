@@ -1,41 +1,7 @@
+@import './globals.css';
 @import './App.css';
-@import './common.css';
 @import './components/TabContainer.css';
-@import './components/Home.css';
-@import './components/TextFormatter.css';
-@import './components/TimeExtractor.css';
-@import './components/RegexTester.css';
-@import './components/StringReplacer.css';
-@import './components/QRCodeGenerator.css';
-@import './components/ExcelImporter.css';
-@import './components/SqlProcessor.css';
-@import './components/JobCommandGenerator.css';
 @import './components/DependencyGraph.css';
-@import './components/InterfaceComparator.css';
-
-*,
-*::before,
-*::after {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-html {
-  font-size: 16px;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-body {
-  font-family: var(--font-sans, 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif);
-  font-size: var(--text-sm);
-  color: var(--color-text);
-  background: var(--color-bg);
-  min-height: 100vh;
-  overflow: hidden;
-  line-height: 1.5;
-}
 
 #root {
   width: 100%;
